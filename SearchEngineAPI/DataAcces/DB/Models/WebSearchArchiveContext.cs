@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
-namespace SearchEngineAPI.Models;
+namespace SearchEngineAPI.DataAcces.DB.Models;
 
 public partial class WebSearchArchiveContext : DbContext
 {

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34701.34
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SearchEngineAPI", "SearchEngineAPI\SearchEngineAPI.csproj", "{026700CF-DAC8-42C0-BC02-87B65CF2C8A1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SearchEngineAPI", "SearchEngineAPI\SearchEngineAPI.csproj", "{026700CF-DAC8-42C0-BC02-87B65CF2C8A1}"
 EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{7807B092-23BF-41FC-938D-8F43C6F830CE}"
 EndProject

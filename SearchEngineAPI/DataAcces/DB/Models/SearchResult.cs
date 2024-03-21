@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace SearchEngineAPI.Models;
+namespace SearchEngineAPI.DataAcces.DB.Models;
 
 public partial class SearchResult
 {
