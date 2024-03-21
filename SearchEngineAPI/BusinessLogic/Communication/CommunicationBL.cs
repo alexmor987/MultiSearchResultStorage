@@ -1,18 +1,10 @@
 ﻿using BusinessLogic.Helpers;
 using Helpers;
 using Helpers.Communication;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Models.Basic;
 using Models.Services.Settings;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Text.Json.Nodes;
-using System.Threading.Tasks;
 
 namespace BusinessLogic.Communication
 {

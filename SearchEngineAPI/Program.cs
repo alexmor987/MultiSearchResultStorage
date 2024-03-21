@@ -2,7 +2,6 @@ using BusinessLogic.Communication;
 using BusinessLogic.Search;
 using BusinessLogic.Search.Interfaces;
 using BusinessLogic.Services;
-using BusinessLogic.Services.Interfaces;
 using DataAccess.DB.Models;
 using DataAccess.Repositories.RepositoryContainer;
 using Microsoft.AspNetCore.Mvc;
@@ -11,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Models.Basic;
 using Models.Services.Settings;
+using SearchEngineAPI.BusinessLogic.Services.BusinessLogic.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +19,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<WebSearchArchiveContext>(options =>
 options.UseNpgsql(builder.Configuration.GetConnectionString("DataBase")));
+
+//var app = builder.Build();
+//using (var scope = app.Services.CreateScope())
+//{
+//    var dbContext = scope.ServiceProvider.GetRequiredService<WebSearchArchiveContext>();
+//    dbContext.Database.Migrate();
+//}
 
 builder.Services.AddScoped<IRepositoryContainer, RepositoryContainer>();
 
@@ -31,14 +38,8 @@ builder.Services.AddStackExchangeRedisCache(options =>
 
 #endregion
 
-
-
-
-
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -125,6 +126,7 @@ RegisterExternalServices();
 #endregion
 
 builder.Services.AddHttpClient();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -141,8 +143,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-
 
 static void LogAutomaticBadRequest(ActionContext context)
 {
@@ -173,13 +173,6 @@ static void LogAutomaticBadRequest(ActionContext context)
 
 void RegisterExternalServices()
 {
-
-    if (settings.First(i => i.Name == "GoogleSearchAPI").UseMock)
-    {
-        builder.Services.AddScoped<ISearchService, SearchServiceMock>();
-    }
-    else
-    {
-        builder.Services.AddScoped<ISearchService, SearchService>();
-    }
+    builder.Services.AddScoped<GoogleSearchService>();
+    builder.Services.AddScoped<BingSearchService>();
 }

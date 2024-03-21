@@ -3,8 +3,13 @@
     "Docker Compose": {
       "commandName": "DockerCompose",
       "commandVersion": "1.0",
+      "composeLaunchAction": "LaunchBrowser",
+      "composeLaunchServiceName": "searchengineapi",
+      "composeLaunchUrl": "{Scheme}://localhost:{ServicePort}/swagger",
       "serviceActions": {
-        "searchengineapi": "StartDebugging"
+        "searchengineapi": "StartDebugging",
+        "searchengine_cache": "StartWithoutDebugging",
+        "searchengine_database": "StartWithoutDebugging"
       }
     }
   }

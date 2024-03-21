@@ -1,11 +1,13 @@
 ﻿using BusinessLogic.Search.Interfaces;
 using BusinessLogic.Services.Interfaces;
-using Microsoft.Extensions.Logging;
 using Models.Basic;
 using DataAccess.Repositories.RepositoryContainer;
-using Models.Services.GoogleSearch;
 using DataAccess.DB.Models;
 using Microsoft.Extensions.Caching.Distributed;
+using BusinessLogic.Services;
+using SearchEngineAPI.BusinessLogic.Services.BusinessLogic.Services;
+using Models.Services.BingSearch;
+using Models.Services.GoogleSearch;
 using Newtonsoft.Json;
 
 namespace BusinessLogic.Search
@@ -13,15 +15,21 @@ namespace BusinessLogic.Search
     public class GetSearchResultsBL : IGetSearchResultsBL
     {
         private readonly ILogger<GetSearchResultsBL> logger;
-        private readonly ISearchService searchService;
+        private readonly GoogleSearchService googleSearchService;
+        private readonly BingSearchService bingSearchService;
         private readonly IRepositoryContainer repositoryContainer;
         private readonly IDistributedCache cache;
 
-
-        public GetSearchResultsBL(ILogger<GetSearchResultsBL> logger, ISearchService searchService, IRepositoryContainer repositoryContainer, IDistributedCache cache)
+        public GetSearchResultsBL(
+            ILogger<GetSearchResultsBL> logger,
+            GoogleSearchService googleSearchService,
+            BingSearchService bingSearchService,
+            IRepositoryContainer repositoryContainer,
+            IDistributedCache cache)
         {
             this.logger = logger;
-            this.searchService = searchService;
+            this.googleSearchService = googleSearchService;
+            this.bingSearchService = bingSearchService;
             this.repositoryContainer = repositoryContainer;
             this.cache = cache;
         }
@@ -29,55 +37,18 @@ namespace BusinessLogic.Search
         public async Task<ServerResponse> GetSearchResults(string tranId, string query)
         {
             ServerResponse serverResponse = new ServerResponse();
-            string cacheKey = $"SearchResults-{query}";
             try
             {
-                string cachedResponse = await cache.GetStringAsync(cacheKey);
-                if (cachedResponse != null)
-                {
-                    serverResponse.Data = JsonConvert.DeserializeObject<List<string>>(cachedResponse);
-                    return serverResponse;
-                }
-                var serviceResult = await searchService.FetchSearchResults(tranId, query);
+                // Perform Google and Bing searches in parallel
+                var googleSearchTask = PerformSearch(googleSearchService, tranId, query, "Google");
+                var bingSearchTask = PerformSearch(bingSearchService, tranId, query, "Bing");
 
-                if (serviceResult.IsError)
-                {
-                    serverResponse.SetError(serviceResult.ErrorCode);
-                }
-                else
-                {
-                    var searchResults = serviceResult.Data as GoogleSearchResponse; 
-                    if (searchResults != null && searchResults.Items != null)
-                    {
-                        // Take the top 5 titles
-                        var topTitles = searchResults.Items.Take(5).Select(item => item.Title).ToList();
+                await Task.WhenAll(googleSearchTask, bingSearchTask);
 
-                        // Store in the database
-                        foreach (var title in topTitles)
-                        {
-                            var searchResultRecord = new SearchResults
-                            {
-                                SearchEngine = "Google", 
-                                Title = title,
-                                Entereddate = DateTime.UtcNow
-                            };
+                // Combine results from Google and Bing, avoiding duplicates
+                var combinedResults = googleSearchTask.Result.Union(bingSearchTask.Result).ToList();
 
-                            await repositoryContainer.SearchResults.AddAsync(searchResultRecord);
-                            await repositoryContainer.SaveAsync();
-                        }
-
-                        var cacheOptions = new DistributedCacheEntryOptions()
-                            .SetAbsoluteExpiration(TimeSpan.FromMinutes(5));
-
-                        await cache.SetStringAsync(cacheKey, JsonConvert.SerializeObject(topTitles), cacheOptions);
-
-                        serverResponse.Data = topTitles;
-                    }
-                    else
-                    {
-                        serverResponse.SetError(204, "No search results found.");
-                    }
-                }
+                serverResponse.Data = combinedResults;
 
                 return serverResponse;
             }
@@ -88,6 +59,50 @@ namespace BusinessLogic.Search
 
                 return serverResponse;
             }
+        }
+
+        private async Task<List<string>> PerformSearch(ISearchService searchService, string tranId, string query, string searchEngine)
+        {
+            List<string> results = new List<string>();
+            string cacheKey = $"SearchResults-{searchEngine}-{query}";
+            string cachedResponse = await cache.GetStringAsync(cacheKey);
+            if (cachedResponse != null)
+            {
+                return JsonConvert.DeserializeObject<List<string>>(cachedResponse);
+            }
+
+            var serviceResult = await searchService.FetchSearchResults(tranId, query);
+            if (!serviceResult.IsError && serviceResult.Data != null)
+            {
+                if (serviceResult.Data is BingSearchResponse bingResponse)
+                {
+                    results = bingResponse.WebPages.Value.Select(sr => sr.Name).Take(5).ToList();
+                }
+                else if (serviceResult.Data is GoogleSearchResponse googleResponse)
+                {
+
+                    results = googleResponse.Items.Select(sr => sr.Title).Take(5).ToList();
+                }
+                foreach (var title in results)
+                {
+                    var searchResultRecord = new SearchResults
+                    {
+                        SearchEngine = searchEngine,
+                        Title = title,
+                        Entereddate = DateTime.UtcNow
+                    };
+
+                    await repositoryContainer.SearchResults.AddAsync(searchResultRecord);
+                    await repositoryContainer.SaveAsync();
+                }
+
+
+                var cacheOptions = new DistributedCacheEntryOptions()
+                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(5));
+                await cache.SetStringAsync(cacheKey, JsonConvert.SerializeObject(results), cacheOptions);
+            }
+
+            return results;
         }
     }
 }

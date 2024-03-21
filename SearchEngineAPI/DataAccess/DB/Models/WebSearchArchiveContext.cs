@@ -6,8 +6,14 @@ namespace DataAccess.DB.Models;
 
 public partial class WebSearchArchiveContext : DbContext
 {
-    public WebSearchArchiveContext()
+    private readonly ILogger<WebSearchArchiveContext> _logger;
+    private readonly IConfiguration _config;
+
+    public WebSearchArchiveContext(DbContextOptions<WebSearchArchiveContext> options, IConfiguration config, ILogger<WebSearchArchiveContext> logger)
+        : base(options)
     {
+        _config = config;
+        _logger = logger;
     }
 
     public WebSearchArchiveContext(DbContextOptions<WebSearchArchiveContext> options)
@@ -18,9 +24,13 @@ public partial class WebSearchArchiveContext : DbContext
     public virtual DbSet<SearchResults> SearchResults { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=WebSearchArchive;Username=postgres;Password=postgres");
-
+    {
+        if (!optionsBuilder.IsConfigured)
+        {
+            var connectionString = _config.GetConnectionString("DataBase");
+            optionsBuilder.UseNpgsql(connectionString);
+        }
+    }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<SearchResults>(entity =>

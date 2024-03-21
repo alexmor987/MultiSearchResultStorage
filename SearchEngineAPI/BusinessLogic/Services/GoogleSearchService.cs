@@ -7,14 +7,14 @@ using Newtonsoft.Json;
 
 namespace BusinessLogic.Services
 {
-    public class SearchService : ISearchService
+    public class GoogleSearchService : ISearchService
     {
-        private readonly ILogger<SearchService> logger;
+        private readonly ILogger<GoogleSearchService> logger;
         private readonly ICommunicationBL communicationBL;
         private readonly IConfiguration config;
         private readonly HttpClient httpClient;
 
-        public SearchService(ILogger<SearchService> logger, ICommunicationBL communicationBL, IConfiguration config,HttpClient httpClient)
+        public GoogleSearchService(ILogger<GoogleSearchService> logger, ICommunicationBL communicationBL, IConfiguration config,HttpClient httpClient)
         {
             this.logger = logger;
             this.communicationBL = communicationBL;
