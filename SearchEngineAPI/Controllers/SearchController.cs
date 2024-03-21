@@ -1,8 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using BusinessLogic.Services.Interfaces; // יבוא הממשקים החדשים
 using Models.Basic;
-using System.Threading.Tasks;
 using BusinessLogic.Search.Interfaces;
 using Models.Search;
 
@@ -10,7 +7,7 @@ namespace SearchEngineAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class SearchController : ControllerBase // שינוי שם הקונטרולר להתאמה
+    public class SearchController : ControllerBase 
     {
         private readonly ILogger<SearchController> logger;
         private readonly IGetSearchResultsBL getSearchResultsBL;
